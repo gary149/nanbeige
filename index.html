@@ -3,9 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nanbeige 3B</title>
+<title>Nanbeige 4.1 3B</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+  *:hover::-webkit-scrollbar-thumb { background: #333; }
+  *:hover::-webkit-scrollbar-thumb:hover { background: #444; }
+  * { scrollbar-color: transparent transparent; }
+  *:hover { scrollbar-color: #333 transparent; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
@@ -21,20 +29,45 @@
     border-bottom: 1px solid #222;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
     flex-shrink: 0;
   }
 
-  header h1 { font-size: 16px; font-weight: 600; color: #fff; }
+  header svg { height: 24px; width: auto; }
+
+  .version-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 1px 7px;
+    line-height: 1.4;
+  }
+
   .tag {
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 4px;
-    background: #1a1a2e;
-    color: #7c8aff;
+    background: #1a1a1a;
+    color: #fff;
     font-weight: 500;
   }
-  #device-tag { margin-left: auto; }
+  #new-chat {
+    margin-left: auto;
+    background: none;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #999;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 3px 10px;
+    cursor: pointer;
+    display: none;
+  }
+  #new-chat:hover { color: #fff; border-color: #555; }
+  #device-tag { margin-left: 0; }
 
   /* --- Loading screen --- */
   #loading {
@@ -69,7 +102,7 @@
   #progress-bar {
     height: 100%;
     width: 0%;
-    background: #7c8aff;
+    background: #fff;
     border-radius: 3px;
     transition: width 0.2s;
   }
@@ -83,7 +116,7 @@
   }
 
   #load-btn {
-    background: #7c8aff;
+    background: #fff;
     color: #000;
     border: none;
     border-radius: 8px;
@@ -94,7 +127,7 @@
     cursor: pointer;
   }
 
-  #load-btn:hover { background: #6b7bff; }
+  #load-btn:hover { background: #ddd; }
   #load-btn:disabled { opacity: 0.3; cursor: default; }
 
   #load-error {
@@ -138,8 +171,8 @@
     margin-bottom: 4px;
   }
 
-  .msg.user .role { color: #7c8aff; }
-  .msg.assistant .role { color: #4a9; }
+  .msg.user .role { color: #fff; }
+  .msg.assistant .role { color: #999; }
 
   .msg .body {
     font-size: 14px;
@@ -184,7 +217,7 @@
     display: inline-block;
     width: 7px;
     height: 14px;
-    background: #7c8aff;
+    background: #fff;
     animation: blink 0.8s step-end infinite;
     vertical-align: text-bottom;
     margin-left: 1px;
@@ -199,8 +232,6 @@
   }
 
   #input-wrap {
-    max-width: 720px;
-    margin: 0 auto;
     display: flex;
     gap: 10px;
   }
@@ -221,12 +252,12 @@
     line-height: 1.5;
   }
 
-  #input:focus { border-color: #7c8aff; }
+  #input:focus { border-color: #fff; }
   #input::placeholder { color: #444; }
   #input:disabled { opacity: 0.4; }
 
   #send {
-    background: #7c8aff;
+    background: #fff;
     color: #000;
     border: none;
     border-radius: 8px;
@@ -240,16 +271,44 @@
     height: 42px;
   }
 
-  #send:hover { background: #6b7bff; }
+  #send:hover { background: #ddd; }
   #send:disabled { opacity: 0.3; cursor: default; }
 
-  .settings-row {
+  #input-anchor {
     max-width: 720px;
-    margin: 0 auto 8px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  #settings-panel {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 10px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 12px 16px;
     display: flex;
-    gap: 14px;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+
+  #settings-panel.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+  }
+
+  #settings-panel .panel-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #555;
+    margin-bottom: 2px;
   }
 
   .setting {
@@ -266,7 +325,7 @@
 
   .setting input[type="range"] {
     width: 80px;
-    accent-color: #7c8aff;
+    accent-color: #fff;
   }
 
   .setting input[type="number"] {
@@ -281,7 +340,7 @@
     outline: none;
   }
 
-  .setting input[type="number"]:focus { border-color: #7c8aff; }
+  .setting input[type="number"]:focus { border-color: #fff; }
 
   .setting .value {
     font-size: 11px;
@@ -294,8 +353,11 @@
 <body>
 
 <header>
-  <h1>Nanbeige 3B</h1>
-  <span class="tag">q4 · ONNX · in-browser</span>
+  <svg role="img" aria-label="Nanbeige" width="950" height="370" viewBox="0 0 950 370" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Nanbeige</title><path d="M834.406 81.078c11.395 2.41 12.91 21.509 4.825 27.957-7.135 5.689-19.43 3.233-27.945 2.389a110.446 110.446 0 0 1 5.705 7.86 69.132 69.132 0 0 1 10.245 51.989 67.798 67.798 0 0 1-29.41 43.143c-14.58 9.487-24.67 10.413-41.235 6.885-6.13 4.496-13.365 12.68-11.71 21.006 2.725 12.873 19.48 14.296 30.1 14.724 17.64.712 37.275-1.847 52.435 9.113 15.9 11.494 19.61 32.595 15.855 50.798-6.055 29.391-32.595 47.173-60.895 51.461-15.105 3.025-36.185.427-50.05-6.22-22.71-10.89-30.54-39.006-13.805-58.769 5.89-6.958 12.68-10.221 20.51-14.416-1.305-1.185-2.705-2.596-4.03-3.708-12.61-10.707-15.775-28.107-9.115-42.938 5.35-11.916 13.205-17.952 23.62-25.037-12.045-7.593-20.55-17.484-25.675-30.756a75.455 75.455 0 0 1 1.57-58.008c8.905-20 30.53-43.284 55.065-39.325 11.105 1.79 16.94 9.773 30.22 7.895 15.66-2.215 16.77-13.375 23.72-16.043Zm-34.46 268.908c7.9-4.832 15.495-11.155 17.09-20.421 6.235-36.155-25.375-33.137-49.905-34.158-5.775-.24-13.14-2.497-18.715-2.962-8.165 10.609-13.89 20.161-12.005 34.298a29.774 29.774 0 0 0 11.475 19.921c12.515 9.576 38.625 11.233 52.06 3.322Zm-23.125-137.42c25-16.983 18.745-86.214.965-108.047-2.535-3.111-5.08-4.149-9.055-3.794-25.1 14.944-19.995 120.426 8.09 111.841ZM456.953.112c1.148-.186 1.095-.156 2.221.21.489.89.86 1.627.575 2.675-7.971 29.304-5.373 60.167-5.829 90.228-.127 8.38.509 17.371-.212 25.931 8.62-9.128 15.59-17.986 25.27-26.365 13.605-11.773 29.025-.312 37.965 11.675 20.11 26.972 23.435 66.435 19.675 98.954-3.49 30.219-15.99 56.215-40.085 74.977-21.21 16.519-30.88 13.672-51.167-1.719-10.609-8.05-18.676-9.091-29.896-1.802l-.857-.244c-1.078-3.225 3.444-11.934 4.123-16.055 2.924-17.742 2.014-36.296 2.003-54.289l-.039-67.161-.006-50.053c.018-15.057 1.973-39.214-6.13-52.724-2.282-3.804-10.333-7.68-12.849-11.277 1.981-2.135 12.653-4.875 16.175-6.016 13.83-4.48 25.774-11.415 39.063-16.945Zm-2.831 252.527c3.795 4.396 21.716 20.072 26.651 20.948 1.44-.52.98-.153 1.93-1.301 21.31-30.954 21.08-78.25 15.99-114.572-1.525-10.866-6.995-28.663-16.515-35.287-4.515-2.925-7.61-3.078-12.785-2.709a38.104 38.104 0 0 0-15.072 13.545c-.683 5.661-.346 14.971-.306 20.916.071 10.501.089 21.002.054 31.503l-.033 43.18c-.019 6.385-.386 17.865.086 23.777ZM202.632 88.82c.202-.028.406-.052.609-.07 10.435-.998 22.098 2.763 30.072 9.5 20.095 16.976 18.143 43.261 18.131 66.888l-.028 54.187c-.029 11.911-.271 24.508.586 36.394.892 12.351 12.071 9.016 15.449 11.761.208 1.649-1.01 3.778-2.077 4.971-5.655 6.294-15.549 15.46-24.162 16.521-15.247 1.877-21.832-20.226-23.179-31.872-9.796 11.329-20.37 29.007-36.177 31.975-21.121 3.967-33.031-20.821-36.127-37.331-5.889-54.837 29.788-66.333 71.079-88.254-.003-20.711 1.25-63.837-31.841-60.478-4.164.423-8.365 2.411-10.87 6-9.367 13.421 10.212 17.48 11.192 29.556.966 9.324-4.642 18.143-13.928 19.465-11.649 1.659-18.716-10.371-19.873-20.427a31.602 31.602 0 0 1 6.544-23.402c9.658-12.215 28.822-23.603 44.6-25.384ZM184.64 254.224c2.026 2.473 3.976 4.516 7.037 5.772 11.262 4.622 25.056-12.023 25.321-22.111.346-13.119.124-27.501.116-40.725-.045-4.605.094-20.102-.487-23.622-12.254 7.647-23.403 15.208-31.024 27.794-8.973 14.82-11.012 37.05-1.504 52.061.177.279.358.556.541.831ZM50.8 123.847c9.237-9.315 29.66-39.234 44.14-35.513 36.774 9.45 33.399 49.212 33.383 78.625l-.024 49.808c-.018 17.008-1.439 35.806 2.549 52.349 1.741 7.226 12.81 11.667 11.998 15.559-5.32 2.118-49.306.466-58.084 1.054-1.403.094-3.185-.059-4.273-1.168.037-3.29 5.337-5.672 7.14-8.332 7.331-10.814 6.123-28.144 6.13-40.547l.01-33.792.034-33.523c.002-7.724.242-16.476-.69-24.033-1.59-10.477-6.402-23.753-19.3-22.909-9.267.607-17.208 9.956-22.961 16.4.729 26.979-.046 53.991.322 80.989.495 16.478-1.36 31.718 1.963 48.018 2.328 11.418 11.219 12.118 12.658 16.98-1.11 1.385-3.677 2.059-5.244 1.883-8.035-.905-52.848 1.482-57.062-.716-1.4-6.003 12.554-8.587 13.107-24.728 1.575-41.355.656-83.023.36-124.422-.047-6.666-3.103-15.961-7.452-20.926-2.473-2.824-7.967-4.455-9.504-7.532.965-1.437 8.678-3.668 10.75-4.264 13.33-3.828 25.738-9.311 38.375-14.983l1.159.312c1.4 2.006.774 30.918.516 35.411ZM313.822 88.129c.791-.163 1.021.04 1.782.354 1.298 2.768.236 30.258.135 35.099 10.738-10.155 23.067-29.487 37.185-35.04 5.838-1.825 13.661 1.249 18.517 4.255 24.405 15.106 22.315 44.05 22.301 68.534l-.144 61.651c-.033 10.607-.14 21.495.185 31.949.261 8.411 2.172 18.418 9.004 23.709 1.992 1.542 5.703 3.333 3.906 6.036-5.623 2.856-47.877-.104-57.221 1.096-1.008.129-2.608-.254-3.422-.986-.26-3.972 5.178-6.856 7.439-10.082 6.672-9.522 5.477-25.946 5.529-37.214l.078-33.08-.084-36.265c-.04-8.304.159-17.974-.922-26.112-.091-4.637-3.702-12.929-7.301-16.024-13.829-11.895-25.361 1.958-34.624 11.552.845 27.771-.501 57.325.032 85.314.325 15.315-1.133 29.563 1.808 44.68 1.567 8.056 13.659 14.141 11.411 17.73-4.285.808-58.819.727-60.581-.199-.21-2.349 2.359-4.816 4.053-6.257 7.679-6.534 9.116-13.222 9.431-23.104.582-18.306.177-36.802.17-55.187l-.002-40.013c-.01-13.082.617-23.286-2.081-36.186-2.395-11.452-13.622-14.84-14.676-18.222 1.123-1.342 3.24-1.727 4.939-2.17 15.053-3.929 28.887-9.62 43.153-15.818Z" fill="#FEFDFD"/><path d="M892.987 88.7c23.83-1.56 39.06 21.468 47.655 40.623 4.02 8.948 6.495 18.731 8.945 28.215-6.88 4.445-15.655 9.042-22.89 13.073a1970.154 1970.154 0 0 0-33.27 18.915c-5.695 3.295-13.4 7.525-18.615 11.27 2.205 17.384 5.615 41.108 20.32 53.119a24.2 24.2 0 0 0 17.8 5.368c9.11-.981 16.96-6.729 23.045-13.337 2.51-2.728 5.375-8.96 9.605-9.521 1.17-.156 1.37.272 2.205.997 1.06 2.84.175 4.343-1.015 6.996-12.25 26.353-41.165 59.665-72.315 38.07-26.98-18.701-35.045-53.627-35.795-84.601-.71-29.429 4.355-57.434 20.98-82.247 7.825-11.599 19.125-24.108 33.345-26.94Zm-18.8 98.103a887.987 887.987 0 0 0 14.145-8.337c6.975-4.012 19.585-11.084 25.73-15.575-.47-14.97-7.96-55.956-21.72-63.429-16.585 9.556-18.475 69.327-18.155 87.341ZM599.192 88.727c6.78-.626 12.795.424 18.63 4.034 22.72 14.048 31.474 40.716 37.799 64.804-4.345 3.639-16.649 9.615-22.059 12.821-16.111 9.55-36.666 19.485-51.941 29.983 1.865 35.3 22.5 84.549 61.99 43.761 2.715-2.805 3.92-7.521 8.38-7.456 1.38.687 1.501.822 2.201 2.197.285 1.931-.705 3.673-1.48 5.519-10.635 25.443-41.605 59.271-70.865 38.607-47.29-33.397-44.775-121.493-16.35-166.183 7.684-12.081 19.205-24.943 33.695-28.087Zm-18.401 97.633a472.708 472.708 0 0 0 14.351-8.303c8.59-4.564 16.349-10.014 24.849-14.645.475-12.795-7.559-59.303-21.844-64-13.6 12.961-16.87 51.887-17.315 70.624a480.17 480.17 0 0 0-.041 16.324Z" fill="#FEFDFD"/><path d="m701.113 88.568.575.135.675.674c.355 8.969.015 26.3-.015 34.432l-.09 91.433c-.005 17.04-2.18 41.412 4.07 57.429 1.18 3.027 11.27 9.351 9.01 12.729-4.99.513-10.69.391-15.73.3-14.785-.268-29.84.446-44.59-.091-.23-3.835.325-3.44 3.2-6.016 4.54-4.064 8.435-9.329 9.22-15.533 1.38-10.893 1.215-21.887 1.205-32.847l-.04-35.574-.125-36.61c-.075-10.452.255-21.698-2.005-31.878-1.8-8.1-7.285-11.157-13.825-15.228 3.14-2.015 15.6-7.343 19.525-9.157a1089.64 1089.64 0 0 0 28.94-14.198ZM680.649 31.465c11.04-1.658 21.375 5.832 23.23 16.84 1.86 11.007-5.444 21.474-16.414 23.531a20.477 20.477 0 0 1-22.921-27.383 20.479 20.479 0 0 1 16.105-12.988Z" fill="#FEFDFD"/></svg>
+  <span class="version-badge">4.1</span>
+  <span class="version-badge">3B</span>
+  <span class="tag">q4 · ONNX · Transformers.js</span>
+  <button id="new-chat">New Chat</button>
   <span id="device-tag" class="tag">detecting...</span>
 </header>
 
@@ -314,30 +376,33 @@
 <div id="chat">
   <div id="messages"></div>
   <div id="input-area">
-    <div class="settings-row">
-      <div class="setting">
-        <label>Temp</label>
-        <input type="range" id="temp" min="0" max="2" step="0.1" value="0.6">
-        <span class="value" id="temp-val">0.6</span>
+    <div id="input-anchor">
+      <div id="settings-panel">
+        <div class="panel-title">Generation</div>
+        <div class="setting">
+          <label>Temp</label>
+          <input type="range" id="temp" min="0" max="2" step="0.1" value="0.6">
+          <span class="value" id="temp-val">0.6</span>
+        </div>
+        <div class="setting">
+          <label>Top-p</label>
+          <input type="range" id="top-p" min="0" max="1" step="0.05" value="0.95">
+          <span class="value" id="top-p-val">0.95</span>
+        </div>
+        <div class="setting">
+          <label>Rep penalty</label>
+          <input type="range" id="rep-penalty" min="1" max="2" step="0.1" value="1.0">
+          <span class="value" id="rep-penalty-val">1.0</span>
+        </div>
+        <div class="setting">
+          <label>Max tokens</label>
+          <input type="number" id="max-tokens" min="1" max="131072" value="4096">
+        </div>
       </div>
-      <div class="setting">
-        <label>Top-p</label>
-        <input type="range" id="top-p" min="0" max="1" step="0.05" value="0.95">
-        <span class="value" id="top-p-val">0.95</span>
+      <div id="input-wrap">
+        <textarea id="input" rows="1" placeholder="Message Nanbeige..." autofocus></textarea>
+        <button id="send">Send</button>
       </div>
-      <div class="setting">
-        <label>Rep penalty</label>
-        <input type="range" id="rep-penalty" min="1" max="2" step="0.1" value="1.0">
-        <span class="value" id="rep-penalty-val">1.0</span>
-      </div>
-      <div class="setting">
-        <label>Max tokens</label>
-        <input type="number" id="max-tokens" min="1" max="131072" value="4096">
-      </div>
-    </div>
-    <div id="input-wrap">
-      <textarea id="input" rows="1" placeholder="Message Nanbeige..." autofocus></textarea>
-      <button id="send">Send</button>
     </div>
   </div>
 </div>
@@ -360,7 +425,9 @@ const progressBar = document.getElementById("progress-bar");
 const progressText = document.getElementById("progress-text");
 const loadError = document.getElementById("load-error");
 const deviceTag = document.getElementById("device-tag");
+const newChatBtn = document.getElementById("new-chat");
 const messagesEl = document.getElementById("messages");
+const settingsPanel = document.getElementById("settings-panel");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
 const tempInput = document.getElementById("temp");
@@ -388,7 +455,7 @@ try {
     if (adapter) {
       useDevice = "webgpu";
       deviceTag.textContent = "WebGPU";
-      deviceTag.style.color = "#4a9";
+      deviceTag.style.color = "#fff";
     } else {
       deviceTag.textContent = "WASM (no GPU)";
     }
@@ -518,6 +585,7 @@ loadBtn.addEventListener("click", async () => {
     // Switch to chat
     loadingEl.style.display = "none";
     chatEl.style.display = "flex";
+    newChatBtn.style.display = "inline-block";
     inputEl.focus();
 
   } catch (err) {
@@ -558,6 +626,7 @@ async function generate(userText) {
   maxTokensInput.disabled = true;
 
   history.push({ role: "user", content: userText });
+  settingsPanel.classList.add("hidden");
   addMessage("user", userText);
 
   const el = addMessage("assistant", "");
@@ -705,6 +774,14 @@ inputEl.addEventListener("keydown", (e) => {
     e.preventDefault();
     send();
   }
+});
+
+newChatBtn.addEventListener("click", () => {
+  if (generating) return;
+  history = [];
+  messagesEl.innerHTML = "";
+  settingsPanel.classList.remove("hidden");
+  inputEl.focus();
 });
 </script>
 </body>
