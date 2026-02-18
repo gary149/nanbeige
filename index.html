@@ -165,6 +165,14 @@
   #load-btn:hover { background: #ddd; }
   #load-btn:disabled { opacity: 0.3; cursor: default; }
 
+  #model-link {
+    font-size: 11px;
+    color: #666;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  #model-link:hover { color: #fff; }
+
   #load-error {
     position: relative;
     z-index: 1;
@@ -421,6 +429,7 @@
       </div>
       <button id="load-btn">Load Model (~1.7 GB)</button>
       <div id="load-error"></div>
+      <a id="model-link" href="https://huggingface.co/Nanbeige/Nanbeige4.1-3B" target="_blank" rel="noopener">Nanbeige/Nanbeige4.1-3B</a>
     </div>
   </div>
 </div>
