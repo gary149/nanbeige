@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
@@ -369,17 +369,23 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
-  // Serve index.html at /
-  if ((url.pathname === "/" || url.pathname === "/index.html") && req.method === "GET") {
-    try {
-      const html = readFileSync(join(__dirname, "index.html"), "utf-8");
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      res.end(html);
-    } catch {
-      res.writeHead(404);
-      res.end("index.html not found");
+  // Serve static files
+  const STATIC_TYPES = { ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".css": "text/css", ".js": "text/javascript" };
+  const safePath = url.pathname === "/" ? "/index.html" : url.pathname;
+  const ext = safePath.slice(safePath.lastIndexOf("."));
+  if (req.method === "GET" && STATIC_TYPES[ext]) {
+    const filePath = join(__dirname, safePath.replace(/\.\./g, ""));
+    if (existsSync(filePath)) {
+      try {
+        const data = readFileSync(filePath);
+        res.writeHead(200, { "Content-Type": STATIC_TYPES[ext] });
+        res.end(data);
+      } catch {
+        res.writeHead(500);
+        res.end("read error");
+      }
+      return;
     }
-    return;
   }
 
   if (url.pathname === "/v1/models" && req.method === "GET") {
