@@ -56,6 +56,7 @@
     font-weight: 500;
   }
   #new-chat {
+    margin-left: auto;
     background: none;
     border: 1px solid #333;
     border-radius: 6px;
@@ -220,12 +221,11 @@
 
   .msg .body {
     font-size: 14px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     color: #e0e0e0;
   }
 
-  .msg.user .body { color: #ccc; }
+  .msg.user .body { white-space: pre-wrap; color: #ccc; }
 
   .msg .meta {
     font-size: 11px;
@@ -257,17 +257,86 @@
     line-height: 1.5;
   }
 
-  .cursor {
-    display: inline-block;
-    width: 7px;
-    height: 14px;
-    background: #fff;
-    animation: blink 0.8s step-end infinite;
-    vertical-align: text-bottom;
-    margin-left: 1px;
+  /* --- Markdown styles for assistant messages --- */
+  .msg .body p { margin: 0 0 0.75em; }
+  .msg .body p:last-child { margin-bottom: 0; }
+  .msg .body h1, .msg .body h2, .msg .body h3,
+  .msg .body h4, .msg .body h5, .msg .body h6 {
+    color: #fff;
+    margin: 1em 0 0.5em;
+    line-height: 1.3;
+  }
+  .msg .body h1 { font-size: 1.4em; }
+  .msg .body h2 { font-size: 1.25em; }
+  .msg .body h3 { font-size: 1.1em; }
+  .msg .body h4, .msg .body h5, .msg .body h6 { font-size: 1em; }
+  .msg .body h1:first-child, .msg .body h2:first-child,
+  .msg .body h3:first-child { margin-top: 0; }
+
+  .msg .body strong { color: #fff; font-weight: 600; }
+  .msg .body em { font-style: italic; }
+
+  .msg .body code {
+    font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 1px 5px;
   }
 
-  @keyframes blink { 50% { opacity: 0; } }
+  .msg .body pre {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    margin: 0.75em 0;
+  }
+  .msg .body pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .msg .body blockquote {
+    border-left: 3px solid #333;
+    padding-left: 12px;
+    margin: 0.75em 0;
+    color: #999;
+  }
+
+  .msg .body ul, .msg .body ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+  }
+  .msg .body li { margin: 0.25em 0; }
+  .msg .body li > ul, .msg .body li > ol { margin: 0.15em 0; }
+
+  .msg .body table {
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    width: auto;
+  }
+  .msg .body th, .msg .body td {
+    border: 1px solid #333;
+    padding: 6px 12px;
+    text-align: left;
+  }
+  .msg .body th { background: #1a1a1a; color: #fff; font-weight: 600; }
+
+  .msg .body hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 1em 0;
+  }
+
+  .msg .body a { color: #aaa; text-decoration: underline; }
+  .msg .body a:hover { color: #fff; }
+
+  .msg .body img { max-width: 100%; border-radius: 4px; }
 
   #input-area {
     border-top: none;
@@ -412,8 +481,8 @@
   <span class="version-badge">4.1</span>
   <span class="version-badge">3B</span>
   <span class="tag">q4 · ONNX · Transformers.js</span>
-  <button id="new-chat">New Chat</button>
   <span id="device-tag" class="tag">detecting...</span>
+  <button id="new-chat">New Chat</button>
 </header>
 
 <!-- Loading screen -->
@@ -457,7 +526,7 @@
         </div>
         <div class="setting">
           <label>Max tokens</label>
-          <input type="number" id="max-tokens" min="1" max="131072" value="4096">
+          <input type="number" id="max-tokens" min="1" max="131072" value="8192">
         </div>
       </div>
       <div id="input-wrap">
@@ -475,6 +544,7 @@ import {
   TextStreamer,
   InterruptableStoppingCriteria,
 } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0-next.4";
+import * as smd from "https://cdn.jsdelivr.net/npm/streaming-markdown@0.2.15/smd.min.js";
 
 const MODEL_ID = "onnx-community/Nanbeige4.1-3B-ONNX";
 
@@ -707,7 +777,9 @@ async function generate(userText) {
   // Thinking block elements (created on first thinking token)
   let thinkingDetails = null;
   let thinkingContent = null;
-  let answerSpan = null;
+  let answerDiv = null;
+  let smdRenderer = null;
+  let smdParser = null;
   let thinkStartTime = null;
 
   const parser = new OutputParser({
@@ -737,17 +809,13 @@ async function generate(userText) {
     },
     onText(text) {
       visibleText += text;
-      if (!answerSpan) {
-        answerSpan = document.createElement("span");
-        bodyEl.appendChild(answerSpan);
+      if (!answerDiv) {
+        answerDiv = document.createElement("div");
+        bodyEl.appendChild(answerDiv);
+        smdRenderer = smd.default_renderer(answerDiv);
+        smdParser = smd.parser(smdRenderer);
       }
-      answerSpan.textContent = visibleText;
-      // Remove old cursor if any, add new one
-      const oldCursor = bodyEl.querySelector(".cursor");
-      if (oldCursor) oldCursor.remove();
-      const cursor = document.createElement("span");
-      cursor.className = "cursor";
-      bodyEl.appendChild(cursor);
+      smd.parser_write(smdParser, text);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     },
   });
@@ -789,20 +857,22 @@ async function generate(userText) {
     totalTokens = outputIds[0].dims[0] - promptLen;
 
   } catch (err) {
-    visibleText = `Error: ${err.message}`;
+    const errSpan = document.createElement("span");
+    errSpan.style.color = "#c55";
+    errSpan.textContent = `Error: ${err.message}`;
+    bodyEl.appendChild(errSpan);
+    visibleText = visibleText || `Error: ${err.message}`;
     console.error(err);
   }
 
   // Finalize
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-  const cursor = bodyEl.querySelector(".cursor");
-  if (cursor) cursor.remove();
-  if (answerSpan) {
-    answerSpan.textContent = visibleText || "(empty response)";
-  } else {
-    // No answer tokens were emitted (edge case)
+  if (smdParser) smd.parser_end(smdParser);
+  if (answerDiv) {
+    if (!visibleText) answerDiv.textContent = "(empty response)";
+  } else if (!visibleText) {
     const span = document.createElement("span");
-    span.textContent = visibleText || "(empty response)";
+    span.textContent = "(empty response)";
     bodyEl.appendChild(span);
   }
 

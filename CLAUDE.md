@@ -47,7 +47,7 @@ To push updates:
 
 ```bash
 # Upload all static files (handles binary/xet automatically)
-huggingface-cli upload victor/nanbeige /Users/vm/code/nanbeige --repo-type space --include "index.html" --include "nanbeige.svg" --include "onboarding-bg.png" --include "README.md"
+huggingface-cli upload victor/nanbeige /Users/vm/code/nanbeige --repo-type space --include "index.html" --include "nanbeige.svg" --include "onboarding-bg.png"
 ```
 
 The Space `README.md` contains metadata (separate from any project README):

@@ -198,7 +198,7 @@ function sendSSE(res, data) {
 // POST /v1/chat/completions — streaming
 // ---------------------------------------------------------------------------
 async function handleStream(body, res) {
-  const maxTokens = body.max_tokens || body.max_completion_tokens || 4096;
+  const maxTokens = body.max_tokens || body.max_completion_tokens || 8192;
   const temperature = body.temperature ?? 0;
   const topP = body.top_p ?? 1.0;
 
@@ -302,7 +302,7 @@ async function handleStream(body, res) {
 // POST /v1/chat/completions — non-streaming
 // ---------------------------------------------------------------------------
 async function handleNonStream(body, res) {
-  const maxTokens = body.max_tokens || body.max_completion_tokens || 4096;
+  const maxTokens = body.max_tokens || body.max_completion_tokens || 8192;
   const temperature = body.temperature ?? 0;
   const topP = body.top_p ?? 1.0;
 
