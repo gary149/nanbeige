@@ -36,6 +36,10 @@ Nanbeige OpenAI-compatible API at http://localhost:8741/v1
   GET  /v1/models
 ```
 
+## Browser demo
+
+The server also serves a browser-based chat UI at `http://localhost:8741/`. It loads the model directly in the browser via WebGPU/WASM (no server-side inference). The `<think>` reasoning blocks stream live into a collapsible section so you can watch the model's chain-of-thought in real time.
+
 ## API
 
 Implements a subset of the [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat).

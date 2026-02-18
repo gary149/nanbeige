@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nanbeige 3B</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #222;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 16px; font-weight: 600; color: #fff; }
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #7c8aff;
+    font-weight: 500;
+  }
+  #device-tag { margin-left: auto; }
+
+  /* --- Loading screen --- */
+  #loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px;
+  }
+
+  #loading h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #888;
+  }
+
+  #progress-wrap {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  #progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #7c8aff;
+    border-radius: 3px;
+    transition: width 0.2s;
+  }
+
+  #progress-text {
+    font-size: 12px;
+    color: #555;
+    margin-top: 8px;
+    text-align: center;
+    min-height: 16px;
+  }
+
+  #load-btn {
+    background: #7c8aff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #load-btn:hover { background: #6b7bff; }
+  #load-btn:disabled { opacity: 0.3; cursor: default; }
+
+  #load-error {
+    color: #c55;
+    font-size: 13px;
+    max-width: 500px;
+    text-align: center;
+    line-height: 1.5;
+    display: none;
+  }
+
+  /* --- Chat screen --- */
+  #chat {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .msg {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .msg .role {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .msg.user .role { color: #7c8aff; }
+  .msg.assistant .role { color: #4a9; }
+
+  .msg .body {
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #e0e0e0;
+  }
+
+  .msg.user .body { color: #ccc; }
+
+  .msg .meta {
+    font-size: 11px;
+    color: #444;
+    margin-top: 6px;
+  }
+
+  .thinking-block {
+    border-left: 2px solid #333;
+    padding: 4px 0 4px 12px;
+    margin-bottom: 8px;
+  }
+
+  .thinking-block summary {
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .thinking-block .thinking-content {
+    font-size: 13px;
+    color: #888;
+    font-style: italic;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    background: #7c8aff;
+    animation: blink 0.8s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #input-area {
+    border-top: 1px solid #222;
+    padding: 16px 24px;
+    flex-shrink: 0;
+  }
+
+  #input-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+  }
+
+  #input {
+    flex: 1;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    min-height: 42px;
+    max-height: 160px;
+    line-height: 1.5;
+  }
+
+  #input:focus { border-color: #7c8aff; }
+  #input::placeholder { color: #444; }
+  #input:disabled { opacity: 0.4; }
+
+  #send {
+    background: #7c8aff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: flex-end;
+    height: 42px;
+  }
+
+  #send:hover { background: #6b7bff; }
+  #send:disabled { opacity: 0.3; cursor: default; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Nanbeige 3B</h1>
+  <span class="tag">q4 · ONNX · in-browser</span>
+  <span id="device-tag" class="tag">detecting...</span>
+</header>
+
+<!-- Loading screen -->
+<div id="loading">
+  <h2>Load model to start chatting</h2>
+  <div id="progress-wrap" style="display:none">
+    <div id="progress-bar-bg"><div id="progress-bar"></div></div>
+    <div id="progress-text"></div>
+  </div>
+  <button id="load-btn">Load Model (~1.7 GB)</button>
+  <div id="load-error"></div>
+</div>
+
+<!-- Chat screen (hidden until model loads) -->
+<div id="chat">
+  <div id="messages"></div>
+  <div id="input-area">
+    <div id="input-wrap">
+      <textarea id="input" rows="1" placeholder="Message Nanbeige..." autofocus></textarea>
+      <button id="send">Send</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  AutoModelForCausalLM,
+  AutoTokenizer,
+  TextStreamer,
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0-next.4";
+
+const MODEL_ID = "onnx-community/Nanbeige4.1-3B-ONNX";
+
+// --- DOM refs ---
+const loadingEl = document.getElementById("loading");
+const chatEl = document.getElementById("chat");
+const loadBtn = document.getElementById("load-btn");
+const progressWrap = document.getElementById("progress-wrap");
+const progressBar = document.getElementById("progress-bar");
+const progressText = document.getElementById("progress-text");
+const loadError = document.getElementById("load-error");
+const deviceTag = document.getElementById("device-tag");
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+
+let tokenizer = null;
+let model = null;
+let generating = false;
+let history = [];
+
+// --- Detect WebGPU ---
+let useDevice = "wasm";
+try {
+  if (navigator.gpu) {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (adapter) {
+      useDevice = "webgpu";
+      deviceTag.textContent = "WebGPU";
+      deviceTag.style.color = "#4a9";
+    } else {
+      deviceTag.textContent = "WASM (no GPU)";
+    }
+  } else {
+    deviceTag.textContent = "WASM (no WebGPU)";
+  }
+} catch {
+  deviceTag.textContent = "WASM";
+}
+
+// --- OutputParser: streams <think> content, extracts answer ---
+class OutputParser {
+  constructor({ onText, onThinking, onThinkingDone }) {
+    this.onText = onText;
+    this.onThinking = onThinking;
+    this.onThinkingDone = onThinkingDone;
+    this.state = "init";
+    this.buf = "";
+  }
+
+  feed(text) {
+    this.buf += text;
+    this._drain();
+  }
+
+  end() {
+    if (this.state === "thinking" && this.buf.length > 0) {
+      this.onThinking(this.buf);
+      this.onThinkingDone();
+      this.buf = "";
+    } else if (this.state === "content" && this.buf.length > 0) {
+      this.onText(this.buf);
+      this.buf = "";
+    }
+  }
+
+  _drain() {
+    let changed = true;
+    while (changed) {
+      changed = false;
+
+      if (this.state === "init") {
+        if (this.buf.length >= 7) {
+          if (this.buf.startsWith("<think>")) {
+            this.state = "thinking";
+            this.buf = this.buf.slice(7);
+            changed = true;
+          } else {
+            this.state = "content";
+            changed = true;
+          }
+        } else if (this.buf.length > 0 && !"<think>".startsWith(this.buf)) {
+          this.state = "content";
+          changed = true;
+        }
+      }
+
+      if (this.state === "thinking") {
+        const closeTag = "</think>";
+        const idx = this.buf.indexOf(closeTag);
+        if (idx >= 0) {
+          // Emit everything before the close tag
+          if (idx > 0) this.onThinking(this.buf.slice(0, idx));
+          this.onThinkingDone();
+          this.buf = this.buf.slice(idx + closeTag.length);
+          this.state = "content";
+          changed = true;
+        } else {
+          // Hold back last 8 chars to detect </think> across chunks
+          const holdback = closeTag.length;
+          if (this.buf.length > holdback) {
+            this.onThinking(this.buf.slice(0, -holdback));
+            this.buf = this.buf.slice(-holdback);
+          }
+        }
+      }
+
+      if (this.state === "content") {
+        if (this.buf.length > 0) {
+          this.onText(this.buf);
+          this.buf = "";
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
+// --- Load model ---
+loadBtn.addEventListener("click", async () => {
+  loadBtn.disabled = true;
+  progressWrap.style.display = "block";
+  loadError.style.display = "none";
+  progressText.textContent = "Loading tokenizer...";
+
+  try {
+    tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+
+    progressText.textContent = "Loading model (q4)...";
+    const t0 = Date.now();
+
+    model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+      dtype: "q4",
+      device: useDevice,
+      progress_callback: (p) => {
+        if (p.status === "download" || p.status === "progress") {
+          const pct = p.progress ?? 0;
+          progressBar.style.width = pct.toFixed(1) + "%";
+          if (p.file) {
+            const name = p.file.split("/").pop();
+            progressText.textContent = `${name} — ${pct.toFixed(0)}%`;
+          }
+        } else if (p.status === "done") {
+          progressBar.style.width = "100%";
+        } else if (p.status === "initiate") {
+          if (p.file) {
+            const name = p.file.split("/").pop();
+            progressText.textContent = `Fetching ${name}...`;
+          }
+        }
+      },
+    });
+
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    console.log(`Model loaded in ${elapsed}s`);
+
+    // Switch to chat
+    loadingEl.style.display = "none";
+    chatEl.style.display = "flex";
+    inputEl.focus();
+
+  } catch (err) {
+    console.error("Load failed:", err);
+    loadError.textContent = `Failed to load: ${err.message ?? err}`;
+    loadError.style.display = "block";
+    loadBtn.disabled = false;
+    progressWrap.style.display = "none";
+  }
+});
+
+// --- Auto-resize textarea ---
+inputEl.addEventListener("input", () => {
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
+});
+
+// --- Add message to UI ---
+function addMessage(role, text) {
+  const el = document.createElement("div");
+  el.className = `msg ${role}`;
+  el.innerHTML = `<div class="role">${role}</div><div class="body"></div>`;
+  if (text) el.querySelector(".body").textContent = text;
+  messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return el;
+}
+
+// --- Generate ---
+async function generate(userText) {
+  if (generating || !model) return;
+  generating = true;
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+
+  history.push({ role: "user", content: userText });
+  addMessage("user", userText);
+
+  const el = addMessage("assistant", "");
+  const bodyEl = el.querySelector(".body");
+  bodyEl.textContent = "";
+
+  let visibleText = "";
+  let totalTokens = 0;
+  const t0 = Date.now();
+
+  // Thinking block elements (created on first thinking token)
+  let thinkingDetails = null;
+  let thinkingContent = null;
+  let answerSpan = null;
+  let thinkStartTime = null;
+
+  const parser = new OutputParser({
+    onThinking(text) {
+      if (!thinkingDetails) {
+        thinkStartTime = Date.now();
+        thinkingDetails = document.createElement("details");
+        thinkingDetails.className = "thinking-block";
+        thinkingDetails.open = true;
+        const summary = document.createElement("summary");
+        summary.textContent = "Thinking...";
+        thinkingDetails.appendChild(summary);
+        thinkingContent = document.createElement("span");
+        thinkingContent.className = "thinking-content";
+        thinkingDetails.appendChild(thinkingContent);
+        bodyEl.appendChild(thinkingDetails);
+      }
+      thinkingContent.textContent += text;
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    },
+    onThinkingDone() {
+      if (thinkingDetails) {
+        thinkingDetails.open = false;
+        const elapsed = ((Date.now() - thinkStartTime) / 1000).toFixed(1);
+        thinkingDetails.querySelector("summary").textContent = `Thought for ${elapsed}s`;
+      }
+    },
+    onText(text) {
+      visibleText += text;
+      if (!answerSpan) {
+        answerSpan = document.createElement("span");
+        bodyEl.appendChild(answerSpan);
+      }
+      answerSpan.textContent = visibleText;
+      // Remove old cursor if any, add new one
+      const oldCursor = bodyEl.querySelector(".cursor");
+      if (oldCursor) oldCursor.remove();
+      const cursor = document.createElement("span");
+      cursor.className = "cursor";
+      bodyEl.appendChild(cursor);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    },
+  });
+
+  try {
+    const chatText = tokenizer.apply_chat_template(history, {
+      tokenize: false,
+      add_generation_prompt: true,
+    });
+
+    const inputs = tokenizer(chatText);
+    const promptLen = inputs.input_ids.dims[1];
+
+    const streamer = new TextStreamer(tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: (text) => {
+        parser.feed(text);
+      },
+    });
+
+    const outputIds = await model.generate({
+      ...inputs,
+      max_new_tokens: 4096,
+      do_sample: false,
+      streamer,
+    });
+
+    parser.end();
+    totalTokens = outputIds[0].dims[0] - promptLen;
+
+  } catch (err) {
+    visibleText = `Error: ${err.message}`;
+    console.error(err);
+  }
+
+  // Finalize
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  const cursor = bodyEl.querySelector(".cursor");
+  if (cursor) cursor.remove();
+  if (answerSpan) {
+    answerSpan.textContent = visibleText || "(empty response)";
+  } else {
+    // No answer tokens were emitted (edge case)
+    const span = document.createElement("span");
+    span.textContent = visibleText || "(empty response)";
+    bodyEl.appendChild(span);
+  }
+
+  if (totalTokens > 0) {
+    const metaEl = document.createElement("div");
+    metaEl.className = "meta";
+    const tokSec = (totalTokens / parseFloat(elapsed)).toFixed(1);
+    metaEl.textContent = `${totalTokens} tokens · ${elapsed}s · ${tokSec} tok/s`;
+    el.appendChild(metaEl);
+  }
+
+  history.push({ role: "assistant", content: visibleText });
+
+  generating = false;
+  inputEl.disabled = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// --- Send ---
+function send() {
+  const text = inputEl.value.trim();
+  if (!text || generating) return;
+  inputEl.value = "";
+  inputEl.style.height = "auto";
+  generate(text);
+}
+
+sendBtn.addEventListener("click", send);
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+</script>
+</body>
+</html>

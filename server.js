@@ -1,9 +1,14 @@
 import http from "node:http";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import {
   AutoModelForCausalLM,
   AutoTokenizer,
   TextStreamer,
 } from "@huggingface/transformers";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const MODEL_ID = "onnx-community/Nanbeige4.1-3B-ONNX";
 const PORT = 8741;
@@ -363,6 +368,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Serve index.html at /
+  if ((url.pathname === "/" || url.pathname === "/index.html") && req.method === "GET") {
+    try {
+      const html = readFileSync(join(__dirname, "index.html"), "utf-8");
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(html);
+    } catch {
+      res.writeHead(404);
+      res.end("index.html not found");
+    }
+    return;
+  }
 
   if (url.pathname === "/v1/models" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
