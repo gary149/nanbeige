@@ -242,6 +242,53 @@
 
   #send:hover { background: #6b7bff; }
   #send:disabled { opacity: 0.3; cursor: default; }
+
+  .settings-row {
+    max-width: 720px;
+    margin: 0 auto 8px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .setting {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .setting label {
+    font-size: 11px;
+    color: #666;
+    white-space: nowrap;
+  }
+
+  .setting input[type="range"] {
+    width: 80px;
+    accent-color: #7c8aff;
+  }
+
+  .setting input[type="number"] {
+    width: 70px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 2px 6px;
+    outline: none;
+  }
+
+  .setting input[type="number"]:focus { border-color: #7c8aff; }
+
+  .setting .value {
+    font-size: 11px;
+    font-family: monospace;
+    color: #666;
+    min-width: 28px;
+  }
 </style>
 </head>
 <body>
@@ -267,6 +314,27 @@
 <div id="chat">
   <div id="messages"></div>
   <div id="input-area">
+    <div class="settings-row">
+      <div class="setting">
+        <label>Temp</label>
+        <input type="range" id="temp" min="0" max="2" step="0.1" value="0.6">
+        <span class="value" id="temp-val">0.6</span>
+      </div>
+      <div class="setting">
+        <label>Top-p</label>
+        <input type="range" id="top-p" min="0" max="1" step="0.05" value="0.95">
+        <span class="value" id="top-p-val">0.95</span>
+      </div>
+      <div class="setting">
+        <label>Rep penalty</label>
+        <input type="range" id="rep-penalty" min="1" max="2" step="0.1" value="1.0">
+        <span class="value" id="rep-penalty-val">1.0</span>
+      </div>
+      <div class="setting">
+        <label>Max tokens</label>
+        <input type="number" id="max-tokens" min="1" max="131072" value="4096">
+      </div>
+    </div>
     <div id="input-wrap">
       <textarea id="input" rows="1" placeholder="Message Nanbeige..." autofocus></textarea>
       <button id="send">Send</button>
@@ -295,6 +363,17 @@ const deviceTag = document.getElementById("device-tag");
 const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
+const tempInput = document.getElementById("temp");
+const tempVal = document.getElementById("temp-val");
+const topPInput = document.getElementById("top-p");
+const topPVal = document.getElementById("top-p-val");
+const repPenaltyInput = document.getElementById("rep-penalty");
+const repPenaltyVal = document.getElementById("rep-penalty-val");
+const maxTokensInput = document.getElementById("max-tokens");
+
+tempInput.addEventListener("input", () => { tempVal.textContent = parseFloat(tempInput.value).toFixed(1); });
+topPInput.addEventListener("input", () => { topPVal.textContent = parseFloat(topPInput.value).toFixed(2); });
+repPenaltyInput.addEventListener("input", () => { repPenaltyVal.textContent = parseFloat(repPenaltyInput.value).toFixed(1); });
 
 let tokenizer = null;
 let model = null;
@@ -473,6 +552,10 @@ async function generate(userText) {
   generating = true;
   inputEl.disabled = true;
   sendBtn.disabled = true;
+  tempInput.disabled = true;
+  topPInput.disabled = true;
+  repPenaltyInput.disabled = true;
+  maxTokensInput.disabled = true;
 
   history.push({ role: "user", content: userText });
   addMessage("user", userText);
@@ -550,10 +633,18 @@ async function generate(userText) {
       },
     });
 
+    const temperature = parseFloat(tempInput.value);
+    const topP = parseFloat(topPInput.value);
+    const repPenalty = parseFloat(repPenaltyInput.value);
+    const maxTokens = parseInt(maxTokensInput.value);
+
     const outputIds = await model.generate({
       ...inputs,
-      max_new_tokens: 4096,
-      do_sample: false,
+      max_new_tokens: maxTokens,
+      do_sample: temperature > 0,
+      temperature: temperature > 0 ? temperature : undefined,
+      top_p: topP,
+      repetition_penalty: repPenalty,
       streamer,
     });
 
@@ -591,6 +682,10 @@ async function generate(userText) {
   generating = false;
   inputEl.disabled = false;
   sendBtn.disabled = false;
+  tempInput.disabled = false;
+  topPInput.disabled = false;
+  repPenaltyInput.disabled = false;
+  maxTokensInput.disabled = false;
   inputEl.focus();
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
