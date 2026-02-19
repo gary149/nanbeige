@@ -56,8 +56,8 @@ The Space `README.md` contains metadata (separate from any project README):
 ---
 title: Nanbeige 4.1 3B
 emoji: 🔮
-colorFrom: gray
-colorTo: gray
+colorFrom: yellow
+colorTo: purple
 sdk: static
 pinned: false
 header: mini
