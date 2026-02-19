@@ -4,6 +4,9 @@ OpenAI-compatible API server that runs [Nanbeige4.1-3B](https://huggingface.co/o
 
 The model is a 3B-parameter reasoning LLM with native tool calling support. The server translates Nanbeige's `<think>` / `<tool_call>` XML format into the standard OpenAI chat completions wire format, so any OpenAI-compatible client can use it as a drop-in local backend.
 
+<img width="1553" height="1262" alt="image" src="https://github.com/user-attachments/assets/2ce8bbd9-efa9-4e43-a576-01121b404589" />
+
+
 ## Setup
 
 ```bash
@@ -189,3 +192,4 @@ const nanbeige: Model<"openai-completions"> = {
   maxTokens: 4096,
 };
 ```
+
