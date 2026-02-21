@@ -696,20 +696,15 @@ loadBtn.addEventListener("click", async () => {
       dtype: "q4",
       device: useDevice,
       progress_callback: (p) => {
+        if (!p.file || !p.file.endsWith("model_q4.onnx_data")) return;
         if (p.status === "download" || p.status === "progress") {
           const pct = p.progress ?? 0;
           progressBar.style.width = pct.toFixed(1) + "%";
-          if (p.file) {
-            const name = p.file.split("/").pop();
-            progressText.textContent = `${name} — ${pct.toFixed(0)}%`;
-          }
+          progressText.textContent = `model_q4.onnx_data — ${pct.toFixed(0)}%`;
         } else if (p.status === "done") {
           progressBar.style.width = "100%";
         } else if (p.status === "initiate") {
-          if (p.file) {
-            const name = p.file.split("/").pop();
-            progressText.textContent = `Fetching ${name}...`;
-          }
+          progressText.textContent = "Downloading model...";
         }
       },
     });
